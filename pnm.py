@@ -1,3 +1,4 @@
+import io
 from contextlib import contextmanager
 from enum import Enum, auto
 from itertools import groupby, islice
@@ -34,7 +35,8 @@ def open_pnm_file(*args, **kwargs):
 
 
 def read_pnm(file):
-    data = iter(lambda: file.read(1), b"")
+    reader = io.BufferedReader(file)
+    data = iter(lambda: reader.read(1), b"")
     fields = (b"".join(group).decode("ascii") for is_space, group in groupby(data, key=bytes.isspace) if not is_space)
 
     try:
@@ -69,7 +71,7 @@ def read_pnm(file):
         if plain:
             image_data = np.fromiter(map(int, fields), dtype)
         else:
-            image_data = np.frombuffer(file.read(), dtype)
+            image_data = np.frombuffer(reader.read(), dtype)
     except ValueError as e:
         raise PnmError(PnmProblem.FORMAT_ERROR, "image") from e
 
