@@ -42,8 +42,5 @@ if error:
             [sg.Exit()],
         ],
     ).read(close=True)
-    if event == "stack":
-        with open("trace", "w") as file:
-            file.write(str(error))
 else:
     sg.Window("PNP", [[sg.Image(data=buffer.getvalue())], [sg.Push(), sg.Exit(), sg.Push()]]).read(close=True)
