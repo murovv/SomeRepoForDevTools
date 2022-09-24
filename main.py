@@ -39,8 +39,8 @@ if error:
         [
             [sg.Text(error_text)],
             [sg.Multiline(error, size=(sg.MESSAGE_BOX_LINE_WIDTH, sg.MAX_SCROLLED_TEXT_BOX_HEIGHT))],
-            [sg.Exit()],
+            [sg.P(), sg.Exit(), sg.P()],
         ],
     ).read(close=True)
 else:
-    sg.Window("PNP", [[sg.Image(data=buffer.getvalue())], [sg.Push(), sg.Exit(), sg.Push()]]).read(close=True)
+    sg.Window("PNP", [[sg.Image(data=buffer.getvalue())], [sg.P(), sg.Exit(), sg.P()]]).read(close=True)
