@@ -95,12 +95,16 @@ def write_pnm(image, max_val, file):
 
     height, width = image.shape[:2]
 
-    if max_val <= U1:
-        image = image.astype("u1")
-    elif max_val <= U2:
-        image = image.astype(">u2")
-    else:
-        raise PnmError(PnmProblem.DATA_ERROR, "max_val")
+    try:
+        if max_val <= U1:
+            dtype = np.dtype("u1")
+        elif max_val <= U2:
+            dtype = np.dtype(">u2")
+        else:
+            raise PnmError(PnmProblem.DATA_ERROR, "max_val")
+        image = image.astype(dtype, casting="same_kind", copy=False)
+    except TypeError as e:
+        raise PnmError(PnmProblem.DATA_ERROR, "dtype") from e
 
     header = f"{tag} {width} {height} {max_val}\n".encode("ascii")
     file.write(header)
