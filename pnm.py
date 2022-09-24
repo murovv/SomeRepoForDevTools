@@ -36,14 +36,27 @@ def open_pnm_file(*args, **kwargs):
 def read_pnm(file):
     data = iter(lambda: file.read(1), b"")
     fields = (b"".join(group).decode("ascii") for is_space, group in groupby(data, key=bytes.isspace) if not is_space)
+
     try:
         tag, *rest = islice(fields, 0, 4)
     except ValueError as e:
         raise PnmError(PnmProblem.FORMAT_ERROR, "tag") from e
+    if tag in ["P5", "P6"]:
+        plain = False
+    elif tag in ["P2", "P3"]:
+        plain = True
+    else:
+        raise PnmError(PnmProblem.UNKNOWN_TAG, tag)
+
     try:
         width, height, max_val = map(int, rest)
     except ValueError as e:
         raise PnmError(PnmProblem.FORMAT_ERROR, "header") from e
+
+    if tag in ["P2", "P5"]:
+        shape = (height, width)
+    else:
+        shape = (height, width, 3)
 
     if max_val <= U1:
         dtype = np.dtype("u1")
@@ -53,20 +66,17 @@ def read_pnm(file):
         raise PnmError(PnmProblem.FORMAT_ERROR, "max_val")
 
     try:
-        if tag in ["P5", "P6"]:
-            image_data = np.frombuffer(file.read(), dtype)
-        elif tag in ["P2", "P3"]:
+        if plain:
             image_data = np.fromiter(map(int, fields), dtype)
         else:
-            raise PnmError(PnmProblem.UNKNOWN_TAG, tag)
+            image_data = np.frombuffer(file.read(), dtype)
     except ValueError as e:
         raise PnmError(PnmProblem.FORMAT_ERROR, "image") from e
 
-    if tag in ["P2", "P5"]:
-        shape = (height, width)
-    else:
-        shape = (height, width, 3)
-    image = image_data.reshape(shape)
+    try:
+        image = image_data.reshape(shape)
+    except ValueError as e:
+        raise PnmError(PnmProblem.FORMAT_ERROR, "image data length") from e
 
     return image, max_val
 
