@@ -68,27 +68,28 @@ def read_pnm(file):
         shape = (height, width, 3)
     image = image_data.reshape(shape)
 
-    if max_val not in [U1, U2]:
-        image = np.round(image.astype(float) * U2 / max_val).astype("u2")
-    return image
+    return image, max_val
 
 
-def write_pnm(image, file):
+def write_pnm(image, max_val, file):
     if image.ndim == 2:
         tag = "P5"
     elif image.ndim == 3:
         tag = "P6"
+        if image.shape[2] != 3:
+            raise PnmError(PnmProblem.DATA_ERROR, "shape")
     else:
-        raise PnmError(PnmProblem.DATA_ERROR)
-    height, width = image.shape[:2]
-    if image.itemsize == 1:
-        max_val = U1
-    elif image.itemsize == 2:
-        image = image.newbyteorder(">")
-        max_val = U2
-    else:
-        raise PnmError(PnmProblem.DATA_ERROR)
-    header = f"{tag} {width} {height} {max_val}\n".encode("ascii")
+        raise PnmError(PnmProblem.DATA_ERROR, "shape")
 
+    height, width = image.shape[:2]
+
+    if max_val <= U1:
+        image = image.astype("u1")
+    elif max_val <= U2:
+        image = image.astype(">u2")
+    else:
+        raise PnmError(PnmProblem.DATA_ERROR, "max_val")
+
+    header = f"{tag} {width} {height} {max_val}\n".encode("ascii")
     file.write(header)
     file.write(image.tobytes())

@@ -17,8 +17,8 @@ error, error_text = None, None
 buffer = io.BytesIO()
 try:
     with open_pnm_file(filename, "rb") as file:
-        image = read_pnm(file)
-    write_pnm(image, buffer)
+        image, max_val = read_pnm(file)
+    write_pnm(image, max_val, buffer)
 except PnmError as e:
     error = traceback.format_exc()
     if e.problem == PnmProblem.FILE_OPEN:
