@@ -4,6 +4,9 @@ from itertools import groupby, islice
 
 import numpy as np
 
+U1 = 255
+U2 = 65535
+
 
 class PnmProblem(Enum):
     FILE_OPEN = auto()
@@ -34,7 +37,7 @@ def read_pnm(file):
     tag, *rest = islice(fields, 0, 4)
     width, height, max_val = map(int, rest)
 
-    if max_val < 256:
+    if max_val <= U1:
         dtype = np.dtype("u1")
     else:
         dtype = np.dtype(">u2")
@@ -52,8 +55,8 @@ def read_pnm(file):
         shape = (height, width, 3)
     image = image_data.reshape(shape)
 
-    if max_val not in [255, 65535]:
-        image = np.round(image.astype(float) * 65535 / max_val).astype("u2")
+    if max_val not in [U1, U2]:
+        image = np.round(image.astype(float) * U2 / max_val).astype("u2")
     return image
 
 
@@ -64,10 +67,10 @@ def write_pnm(image, file):
         tag = "P6"
     height, width = image.shape[:2]
     if image.itemsize == 1:
-        max_val = 255
+        max_val = U1
     else:
         image = image.newbyteorder(">")
-        max_val = 65535
+        max_val = U2
     header = f"{tag} {width} {height} {max_val}\n".encode("ascii")
 
     file.write(header)
