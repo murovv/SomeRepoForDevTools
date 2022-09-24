@@ -28,7 +28,7 @@ except PnmError as e:
     elif e.problem == PnmProblem.FORMAT_ERROR:
         error_text = f"Invalid {e.args[0]}"
     elif e.problem == PnmProblem.DATA_ERROR:
-        error_text = "Invalid image"
+        error_text = f"Invalid image ({e.args[0]})"
 except Exception as e:
     error = traceback.format_exc()
 if error:
