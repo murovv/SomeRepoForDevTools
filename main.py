@@ -25,6 +25,10 @@ except PnmError as e:
         error_text = "Error opening file"
     elif e.problem == PnmProblem.UNKNOWN_TAG:
         error_text = f"Unknown tag {e.args[0]}"
+    elif e.problem == PnmProblem.FORMAT_ERROR:
+        error_text = f"Invalid {e.args[0]}"
+    elif e.problem == PnmProblem.DATA_ERROR:
+        error_text = "Invalid image"
 except Exception as e:
     error = traceback.format_exc()
 if error:

@@ -11,6 +11,8 @@ U2 = 65535
 class PnmProblem(Enum):
     FILE_OPEN = auto()
     UNKNOWN_TAG = auto()
+    FORMAT_ERROR = auto()
+    DATA_ERROR = auto()
 
 
 class PnmError(Exception):
@@ -34,20 +36,31 @@ def open_pnm_file(*args, **kwargs):
 def read_pnm(file):
     data = iter(lambda: file.read(1), b"")
     fields = (b"".join(group).decode("ascii") for is_space, group in groupby(data, key=bytes.isspace) if not is_space)
-    tag, *rest = islice(fields, 0, 4)
-    width, height, max_val = map(int, rest)
+    try:
+        tag, *rest = islice(fields, 0, 4)
+    except ValueError as e:
+        raise PnmError(PnmProblem.FORMAT_ERROR, "tag") from e
+    try:
+        width, height, max_val = map(int, rest)
+    except ValueError as e:
+        raise PnmError(PnmProblem.FORMAT_ERROR, "header") from e
 
     if max_val <= U1:
         dtype = np.dtype("u1")
-    else:
+    elif max_val <= U2:
         dtype = np.dtype(">u2")
-
-    if tag in ["P5", "P6"]:
-        image_data = np.frombuffer(file.read(), dtype)
-    elif tag in ["P2", "P3"]:
-        image_data = np.fromiter(map(int, fields), dtype)
     else:
-        raise PnmError(PnmProblem.UNKNOWN_TAG, tag)
+        raise PnmError(PnmProblem.FORMAT_ERROR, "max_val")
+
+    try:
+        if tag in ["P5", "P6"]:
+            image_data = np.frombuffer(file.read(), dtype)
+        elif tag in ["P2", "P3"]:
+            image_data = np.fromiter(map(int, fields), dtype)
+        else:
+            raise PnmError(PnmProblem.UNKNOWN_TAG, tag)
+    except ValueError as e:
+        raise PnmError(PnmProblem.FORMAT_ERROR, "image") from e
 
     if tag in ["P2", "P5"]:
         shape = (height, width)
@@ -63,14 +76,18 @@ def read_pnm(file):
 def write_pnm(image, file):
     if image.ndim == 2:
         tag = "P5"
-    else:
+    elif image.ndim == 3:
         tag = "P6"
+    else:
+        raise PnmError(PnmProblem.DATA_ERROR)
     height, width = image.shape[:2]
     if image.itemsize == 1:
         max_val = U1
-    else:
+    elif image.itemsize == 2:
         image = image.newbyteorder(">")
         max_val = U2
+    else:
+        raise PnmError(PnmProblem.DATA_ERROR)
     header = f"{tag} {width} {height} {max_val}\n".encode("ascii")
 
     file.write(header)
