@@ -39,7 +39,7 @@ try:
     write_pnm(image, max_val, buffer)
 except Exception as exc:
     error, error_text = handle_exception(exc)
-    event, values = sg.Window(
+    sg.Window(
         "Error",
         [
             [sg.Text(error_text)],
