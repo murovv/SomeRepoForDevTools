@@ -1,36 +1,13 @@
 import io
 from contextlib import contextmanager
-from dataclasses import dataclass
 from itertools import groupby, islice
 
 import numpy as np
 
+from .exceptions import *
+
 U1 = 255
 U2 = 65535
-
-
-class PnmError(Exception):
-    pass
-
-
-@dataclass
-class FileOpenError(PnmError):
-    filename: str
-
-
-@dataclass
-class UnknownTagError(PnmError):
-    tag: bytes
-
-
-@dataclass
-class FormatError(PnmError):
-    file_part: str
-
-
-@dataclass
-class DataError(PnmError):
-    problem: str
 
 
 @contextmanager

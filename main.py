@@ -3,8 +3,8 @@ import traceback
 
 import PySimpleGUI as sg
 
-from pnm import (DataError, FileOpenError, FormatError, PnmError,
-                 UnknownTagError, open_pnm_file, read_pnm, write_pnm)
+from pnm import open_pnm_file, read_pnm, write_pnm
+from pnm.exceptions import *
 
 
 def handle_exception(exc):
