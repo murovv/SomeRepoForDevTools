@@ -3,20 +3,23 @@ import traceback
 
 import PySimpleGUI as sg
 
-from pnm import PnmError, PnmProblem, open_pnm_file, read_pnm, write_pnm
+from pnm import (DataError, FileOpenError, FormatError, PnmError,
+                 UnknownTagError, open_pnm_file, read_pnm, write_pnm)
 
 
 def handle_exception(exc):
-    error_text = "Unknown error"
-    if isinstance(exc, PnmError):
-        if exc.problem == PnmProblem.FILE_OPEN:
-            error_text = "Error opening file"
-        elif exc.problem == PnmProblem.UNKNOWN_TAG:
-            error_text = f"Unknown tag {exc.args[0]}"
-        elif exc.problem == PnmProblem.FORMAT_ERROR:
-            error_text = f"Invalid {exc.args[0]}"
-        elif exc.problem == PnmProblem.DATA_ERROR:
-            error_text = f"Invalid image ({exc.args[0]})"
+    if isinstance(exc, FileOpenError):
+        error_text = "Error opening file"
+    elif isinstance(exc, UnknownTagError):
+        error_text = f"Unknown tag {exc.tag}"
+    elif isinstance(exc, FormatError):
+        error_text = f"Invalid {exc.file_part}"
+    elif isinstance(exc, DataError):
+        error_text = f"Invalid image ({exc.problem})"
+    elif isinstance(exc, PnmError):
+        error_text = "PNM error"
+    else:
+        error_text = "Unknown error"
     return traceback.format_exc(), error_text
 
 

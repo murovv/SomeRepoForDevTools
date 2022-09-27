@@ -1,6 +1,6 @@
 import io
 from contextlib import contextmanager
-from enum import Enum, auto
+from dataclasses import dataclass
 from itertools import groupby, islice
 
 import numpy as np
@@ -9,25 +9,36 @@ U1 = 255
 U2 = 65535
 
 
-class PnmProblem(Enum):
-    FILE_OPEN = auto()
-    UNKNOWN_TAG = auto()
-    FORMAT_ERROR = auto()
-    DATA_ERROR = auto()
-
-
 class PnmError(Exception):
-    def __init__(self, problem, *args):
-        super().__init__(*args)
-        self.problem = problem
+    pass
+
+
+@dataclass
+class FileOpenError(PnmError):
+    filename: str
+
+
+@dataclass
+class UnknownTagError(PnmError):
+    tag: bytes
+
+
+@dataclass
+class FormatError(PnmError):
+    file_part: str
+
+
+@dataclass
+class DataError(PnmError):
+    problem: str
 
 
 @contextmanager
-def open_pnm_file(*args, **kwargs):
+def open_pnm_file(filename, *args, **kwargs):
     try:
-        file = open(*args, **kwargs)
+        file = open(filename, *args, **kwargs)
     except IOError as e:
-        raise PnmError(PnmProblem.FILE_OPEN) from e
+        raise FileOpenError(filename) from e
     try:
         yield file
     finally:
@@ -42,7 +53,7 @@ def read_pnm(file):
     elif tag in [b"P2", b"P3"]:
         plain = True
     else:
-        raise PnmError(PnmProblem.UNKNOWN_TAG, tag)
+        raise UnknownTagError(tag)
 
     data = iter(lambda: reader.read(1), b"")
     fields = (b"".join(group).decode("ascii") for is_space, group in groupby(data, key=bytes.isspace) if not is_space)
@@ -50,7 +61,7 @@ def read_pnm(file):
     try:
         width, height, max_val = map(int, islice(fields, 0, 3))
     except ValueError as e:
-        raise PnmError(PnmProblem.FORMAT_ERROR, "header") from e
+        raise FormatError("header") from e
 
     if tag in [b"P2", b"P5"]:
         shape = (height, width)
@@ -62,7 +73,7 @@ def read_pnm(file):
     elif max_val <= U2:
         dtype = np.dtype(">u2")
     else:
-        raise PnmError(PnmProblem.FORMAT_ERROR, "max_val")
+        raise FormatError("max_val")
 
     try:
         if plain:
@@ -70,12 +81,12 @@ def read_pnm(file):
         else:
             image_data = np.frombuffer(reader.read(), dtype)
     except ValueError as e:
-        raise PnmError(PnmProblem.FORMAT_ERROR, "image") from e
+        raise FormatError("image") from e
 
     try:
         image = image_data.reshape(shape)
     except ValueError as e:
-        raise PnmError(PnmProblem.FORMAT_ERROR, "image data length") from e
+        raise FormatError("image data length") from e
 
     return image, max_val
 
@@ -86,9 +97,9 @@ def write_pnm(image, max_val, file):
     elif image.ndim == 3:
         tag = "P6"
         if image.shape[2] != 3:
-            raise PnmError(PnmProblem.DATA_ERROR, "shape")
+            raise DataError("number of channels")
     else:
-        raise PnmError(PnmProblem.DATA_ERROR, "shape")
+        raise DataError("array dimensions")
 
     height, width = image.shape[:2]
 
@@ -98,10 +109,10 @@ def write_pnm(image, max_val, file):
         elif max_val <= U2:
             dtype = np.dtype(">u2")
         else:
-            raise PnmError(PnmProblem.DATA_ERROR, "max_val")
+            raise DataError("max_val")
         image = image.astype(dtype, casting="same_kind", copy=False)
     except TypeError as e:
-        raise PnmError(PnmProblem.DATA_ERROR, "dtype") from e
+        raise DataError("dtype") from e
 
     header = f"{tag} {width} {height} {max_val}\n".encode("ascii")
     file.write(header)
