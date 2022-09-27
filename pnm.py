@@ -36,26 +36,23 @@ def open_pnm_file(*args, **kwargs):
 
 def read_pnm(file):
     reader = io.BufferedReader(file)
-    data = iter(lambda: reader.read(1), b"")
-    fields = (b"".join(group).decode("ascii") for is_space, group in groupby(data, key=bytes.isspace) if not is_space)
-
-    try:
-        tag, *rest = islice(fields, 0, 4)
-    except ValueError as e:
-        raise PnmError(PnmProblem.FORMAT_ERROR, "tag") from e
-    if tag in ["P5", "P6"]:
+    tag = reader.read(2)
+    if tag in [b"P5", b"P6"]:
         plain = False
-    elif tag in ["P2", "P3"]:
+    elif tag in [b"P2", b"P3"]:
         plain = True
     else:
         raise PnmError(PnmProblem.UNKNOWN_TAG, tag)
 
+    data = iter(lambda: reader.read(1), b"")
+    fields = (b"".join(group).decode("ascii") for is_space, group in groupby(data, key=bytes.isspace) if not is_space)
+
     try:
-        width, height, max_val = map(int, rest)
+        width, height, max_val = map(int, islice(fields, 0, 3))
     except ValueError as e:
         raise PnmError(PnmProblem.FORMAT_ERROR, "header") from e
 
-    if tag in ["P2", "P5"]:
+    if tag in [b"P2", b"P5"]:
         shape = (height, width)
     else:
         shape = (height, width, 3)
