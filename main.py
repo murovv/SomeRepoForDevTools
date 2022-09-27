@@ -5,6 +5,21 @@ import PySimpleGUI as sg
 
 from pnm import PnmError, PnmProblem, open_pnm_file, read_pnm, write_pnm
 
+
+def handle_exception(exc):
+    error_text = "Unknown error"
+    if isinstance(exc, PnmError):
+        if exc.problem == PnmProblem.FILE_OPEN:
+            error_text = "Error opening file"
+        elif exc.problem == PnmProblem.UNKNOWN_TAG:
+            error_text = f"Unknown tag {exc.args[0]}"
+        elif exc.problem == PnmProblem.FORMAT_ERROR:
+            error_text = f"Invalid {exc.args[0]}"
+        elif exc.problem == PnmProblem.DATA_ERROR:
+            error_text = f"Invalid image ({exc.args[0]})"
+    return traceback.format_exc(), error_text
+
+
 sg.theme("DarkAmber")
 
 event, values = sg.Window(
@@ -19,21 +34,8 @@ try:
     with open_pnm_file(filename, "rb") as file:
         image, max_val = read_pnm(file)
     write_pnm(image, max_val, buffer)
-except PnmError as e:
-    error = traceback.format_exc()
-    if e.problem == PnmProblem.FILE_OPEN:
-        error_text = "Error opening file"
-    elif e.problem == PnmProblem.UNKNOWN_TAG:
-        error_text = f"Unknown tag {e.args[0]}"
-    elif e.problem == PnmProblem.FORMAT_ERROR:
-        error_text = f"Invalid {e.args[0]}"
-    elif e.problem == PnmProblem.DATA_ERROR:
-        error_text = f"Invalid image ({e.args[0]})"
-except Exception as e:
-    error = traceback.format_exc()
-if error:
-    if not error_text:
-        error_text = "Unknown error"
+except Exception as exc:
+    error, error_text = handle_exception(exc)
     event, values = sg.Window(
         "Error",
         [
