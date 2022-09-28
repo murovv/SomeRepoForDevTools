@@ -23,7 +23,7 @@ def handle_exception(exc):
     return traceback.format_exc(), error_text
 
 
-sg.theme("DarkAmber")
+sg.theme("DarkGray15")
 
 event, values = sg.Window(
     "Open PNP", [[sg.Text("Filename")], [sg.Input(k="filename"), sg.FileBrowse()], [sg.OK(), sg.Cancel()]]
