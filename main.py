@@ -20,25 +20,7 @@ def handle_exception(exc):
         error_text = "PNM error"
     else:
         error_text = "Unknown error"
-    return traceback.format_exc(), error_text
-
-
-sg.theme("DarkGray15")
-
-event, values = sg.Window(
-    "Open PNP", [[sg.Text("Filename")], [sg.Input(k="filename"), sg.FileBrowse()], [sg.OK(), sg.Cancel()]]
-).read(close=True)
-if event != "OK":
-    exit()
-filename = values["filename"]
-error, error_text = None, None
-buffer = io.BytesIO()
-try:
-    with open_pnm_file(filename, "rb") as file:
-        image, max_val = read_pnm(file)
-    write_pnm(image, max_val, buffer)
-except Exception as exc:
-    error, error_text = handle_exception(exc)
+    error = traceback.format_exc()
     sg.Window(
         "Error",
         [
@@ -47,5 +29,34 @@ except Exception as exc:
             [sg.P(), sg.Exit(), sg.P()],
         ],
     ).read(close=True)
+
+
+sg.theme("DarkGray15")
+
+event, values = sg.Window(
+    "Open PNP",
+    [[sg.Text("Filename")], [sg.Input(k="filename"), sg.FileBrowse(target="filename")], [sg.OK(), sg.Cancel()]],
+).read(close=True)
+if event != "OK":
+    exit()
+filename = values["filename"]
+buffer = io.BytesIO()
+try:
+    with open_pnm_file(filename, "rb") as file:
+        image, max_val = read_pnm(file)
+    write_pnm(image, max_val, buffer)
+except Exception as exc:
+    handle_exception(exc)
 else:
-    sg.Window("PNP", [[sg.Image(data=buffer.getvalue())], [sg.P(), sg.Exit(), sg.P()]]).read(close=True)
+    event, values = sg.Window(
+        "PNP", [[sg.Image(data=buffer.getvalue())], [sg.Button("Save", k="save"), sg.Exit()]]
+    ).read(close=True)
+    if event == "save":
+        event, values = sg.Window(
+            "Save as", [[sg.Input(k="filename"), sg.SaveAs(target="filename")], [sg.Save()]]
+        ).read(close=True)
+        try:
+            with open_pnm_file(values["filename"], "wb") as file:
+                file.write(buffer.getvalue())
+        except Exception as exc:
+            handle_exception(exc)
