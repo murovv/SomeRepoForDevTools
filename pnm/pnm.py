@@ -68,7 +68,7 @@ def read_pnm(file):
     return image, max_val
 
 
-def write_pnm(image, max_val, file):
+def write_pnm(image: np.ndarray, max_val, file):
     if image.ndim == 2:
         tag = "P5"
     elif image.ndim == 3:
