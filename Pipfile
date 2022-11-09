@@ -9,3 +9,4 @@ pysimplegui = "*"
 
 [dev-packages]
 ipython = "*"
+sphinx = "*"

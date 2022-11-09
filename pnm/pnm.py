@@ -12,6 +12,17 @@ U2 = 65535
 
 @contextmanager
 def open_pnm_file(filename, *args, **kwargs):
+    """
+    A context manager for opening PNM files
+
+    Accepts the same arguments as ``open``
+
+    :param filename: filename
+    :type filename: str
+    :param args: open args
+    :param kwargs: open kwargs
+    :return:
+    """
     try:
         file = open(filename, *args, **kwargs)
     except IOError as e:
@@ -23,6 +34,14 @@ def open_pnm_file(filename, *args, **kwargs):
 
 
 def read_pnm(file):
+    """
+    Read a PNM file
+
+    :param file: the file to read
+    :type file: file-like object
+    :return: (image, maxval)
+    :rtype: (ndarray, int)
+    """
     reader = io.BufferedReader(file)
     tag = reader.read(2)
     if tag in [b"P5", b"P6"]:
@@ -69,6 +88,17 @@ def read_pnm(file):
 
 
 def write_pnm(image, max_val, file):
+    """
+    Write a PNM file
+
+    :param image: the image to write
+    :type image: ndarray
+    :param max_val: maxval
+    :type max_val: int
+    :param file: the file to write to
+    :return: None
+    :rtype: None
+    """
     if image.ndim == 2:
         tag = "P5"
     elif image.ndim == 3:
